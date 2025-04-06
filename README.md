@@ -1,7 +1,3 @@
-Collecting workspace informationHere’s a project description you can use for your GitHub repository:
-
----
-
 # ESP32-C3 Dimmer with NeoPixel LED Strip
 
 This project is an ESP32-C3-based dimmer for controlling a WS2812 NeoPixel LED strip. It includes functionality for smooth brightness transitions and warm light effects. The project is built using the Arduino framework and PlatformIO.
