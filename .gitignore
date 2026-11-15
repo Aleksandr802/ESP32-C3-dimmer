@@ -3,3 +3,6 @@
 .vscode/c_cpp_properties.json
 .vscode/launch.json
 .vscode/ipch
+
+# Wi-Fi passwords per location (copy the .example file)
+include/secrets_*.h
