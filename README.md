@@ -7,7 +7,7 @@ http://192.168.4.1). Pick the room when building:
 | Build (env) | Board | LEDs | Wi-Fi network | Extra |
 |---|---|---|---|---|
 | `esp-32u` | ESP32 dev board | 22 on GPIO12 | `BathLight` | — |
-| `kitchen_light` | ESP32-C3 SuperMini | 52 on GPIO4 | `KitchenLight` | Sweep Hands switch read on GPIO3, 0.6 s fade |
+| `kitchen_light` | ESP32-C3 SuperMini | 52 on GPIO4 | `KitchenLight` | push button on GPIO3, 0.6 s fade |
 
 ```bash
 pio run -e kitchen_light -t upload     # or choose the env in VS Code's PlatformIO toolbar
@@ -32,32 +32,11 @@ saying so.
 
 - ESP32-C3 SuperMini
 - WS2812B 5 V strip, 52 LEDs
-- Sweep Hands SW V2.0 hand-wave switch (power in, power out, no signal wire)
+- A push button (momentary, normally open)
 - 5 V 4 A power supply
 - 330 Ω resistor, 1000 µF 10 V (or higher) capacitor
-- 10 kΩ and 20 kΩ resistors (for the sensor)
 
-### How the sensor is used
-
-The Sweep Hands switch is made to cut a strip's power itself. Here it does
-**not** carry the strip's power. It gets 5 V on its input, and its output only
-goes to one input pin of the board. Every wave flips its output, and the board
-toggles the light on each flip. The strip and the board are fed directly from
-the supply, so the light also works from Wi-Fi whatever the switch's output
-is doing.
-
-### Step 1: find out which wire the switch turns on and off
-
-Connect only the supply to the switch's **input** (+ and −). Nothing on its
-output yet. Set a multimeter to DC volts, black probe on the supply's **GND**
-(not the switch's output −), and wave a hand a few times:
-
-| Red probe on | Reading | Your switch |
-|---|---|---|
-| output **+** | goes 5 V ↔ 0 V with each wave | switches the + wire: **wiring A** |
-| output **+** | stays at 5 V | switches the − wire: **wiring B** (check: output − goes 0 V ↔ floating) |
-
-### Step 2: wiring
+### Wiring
 
 ```
  5 V 4 A supply                         WS2812B strip (52)
@@ -66,56 +45,45 @@ output yet. Set a multimeter to DC volts, black probe on the supply's **GND**
    GND ──┼──┬─────┴─────────────┴──────── GND
          │  │
          │  │   ESP32-C3 SuperMini
-         ├──┼── 5V
-         │  ├── GND
-         │  │   GPIO4 ── 330 Ω ────────── DIN   (data wire under 30 cm)
-         │  │   GPIO3 ── (see A or B)
-         │  │
-         │  │   Sweep Hands switch
-         └──┼── input +
-            └── input −
-                output + / output −  ── (see A or B)
+         └──┼── 5V
+            ├── GND
+            │   GPIO4 ── 330 Ω ────────── DIN   (data wire under 30 cm)
+            │   GPIO3 ──┐
+            │         button
+            └───────────┘                        (button between GPIO3 and GND)
 ```
 
-**Wiring A** (switches +): the output is 5 V, too much for the C3, so it goes
-through a divider that brings it to 3.3 V:
+The button needs no resistors: the board's own pull-up holds GPIO3 high, and
+a press connects it to GND. Each press toggles the light (with the same fade
+as the phone). Presses closer together than 0.3 s count once
+(`SENSOR_LOCKOUT_MS`), and contact bounce is filtered out. Holding the button
+toggles once.
 
-```
-switch output + ── 10 kΩ ──┬── GPIO3
-                           └── 20 kΩ ── GND
-switch output −: not connected
-```
+A long wire to the button (several metres) can pick up interference; if the
+light ever switches by itself, add a 100 nF capacitor between GPIO3 and GND
+at the board.
 
-Settings: the defaults (`SENSOR_ACTIVE_HIGH=1`, `SENSOR_LATCHING=1`, no pull).
+### Check
 
-**Wiring B** (switches −): output − is pulled to GND when the switch is on.
-The board's own pull-up keeps it at 3.3 V otherwise, so no resistors:
-
-```
-switch output − ── GPIO3
-switch output +: not connected
-```
-
-Settings: in `[env:kitchen_light]` change to `-DSENSOR_ACTIVE_HIGH=0` and add
-`-DSENSOR_PULL=1`.
-
-Never connect the switch's output **+** straight to GPIO3: 5 V can damage the C3.
-
-### Step 3: check
-
-Open the serial monitor (`pio device monitor -b 115200`) and wave a hand.
-Each wave should print one `sensor: active` or `sensor: idle` line, followed
-by `light ON (hand sensor)` or `light OFF (hand sensor)`.
+Open the serial monitor (`pio device monitor -b 115200`). At start-up it
+prints `sensor on GPIO3, now idle`. Each press prints `sensor: active`,
+`light ON (hand sensor)` / `light OFF (hand sensor)`, then `sensor: idle`.
 
 | You see | Fix |
 |---|---|
-| nothing | check the wiring; in wiring B make sure `SENSOR_PULL=1` is set |
-| two lines per wave, light goes on and straight off | the switch gives a pulse, not a flip: set `-DSENSOR_LATCHING=0` |
-| holding a hand there prints nothing, then one line | normal: some of these switches dim while a hand is held; the board ignores the dimming and only counts the final on/off |
+| `now active` at start-up, nothing on presses | the button is wired between GPIO3 and 3.3 V or 5 V; it must go to GND |
+| nothing at all | check both button wires; with a 4-leg button use two legs on opposite sides |
+
+### Other inputs
+
+The same input also takes a latching switch (a wall switch that stays on or
+off: set `-DSENSOR_LATCHING=1`, every flip toggles) or a sensor with a signal
+output. A sensor that only switches power, like the Sweep Hands SW V2.0, did
+not work here.
 
 ### Notes on the rest of the wiring
 
-- **One common ground**: supply, strip, board and switch input − all connected.
+- **One common ground**: supply, strip and board GND all connected.
 - **Capacitor** across 5V/GND at the strip's input, minus side to GND.
 - **Power**: 52 LEDs at full warm white draw about 2.6 A, so 4 A is enough.
   Use 0.5–0.75 mm² (20–18 AWG) wire for 5 V and GND. If the far end looks

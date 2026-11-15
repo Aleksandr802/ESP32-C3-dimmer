@@ -12,11 +12,13 @@
 //   MAX_BRIGHTNESS     0-255, brightness of "on" (default 255)
 //   FADE_MS            fade time for on/off; 0 = instant
 //   LIGHT_ON_AT_BOOT   1 = light comes on at power-up (default), 0 = stays off
-//   SENSOR_PIN         hand sensor output pin; -1 or unset = no sensor
+//   SENSOR_PIN         push button or hand sensor pin; -1 or unset = none
+//                      (push button: GPIO to GND, SENSOR_ACTIVE_HIGH=0, SENSOR_PULL=1)
 //   SENSOR_ACTIVE_HIGH 1 = sensor output goes HIGH when it sees a hand
 //   SENSOR_LATCHING    0 = sensor gives a pulse per wave (each pulse toggles)
 //                      1 = sensor flips its output on each wave (each change toggles)
 //   SENSOR_PULL        0 = none (default), 1 = pull-up, 2 = pull-down
+//   SENSOR_LOCKOUT_MS  pulse inputs: presses closer together than this count once (default 800)
 //   DISABLE_BROWNOUT   1 = turn off the brown-out reset (bathroom board only)
 
 #include <Arduino.h>
@@ -87,7 +89,9 @@ static_assert(sizeof(AP_PASSWORD) - 1 >= 8, "AP_PASSWORD needs at least 8 charac
 #define AP_MAX_CONNECTIONS 4
 #define FADE_STEP_MS 10          // fade update interval
 #define SENSOR_DEBOUNCE_MS 40    // a level must hold this long to count
-#define SENSOR_LOCKOUT_MS 800    // pulse sensors: ignore further pulses this long after a toggle
+#ifndef SENSOR_LOCKOUT_MS
+#define SENSOR_LOCKOUT_MS 800    // pulse inputs: ignore further pulses this long after a toggle
+#endif
 
 #if defined(CONFIG_IDF_TARGET_ESP32C3)
 NeoPixelBus<NeoGrbFeature, NeoEsp32Rmt0Ws2812xMethod> strip(NUM_LEDS, LED_PIN);
