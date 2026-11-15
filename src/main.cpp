@@ -6,7 +6,8 @@
 //   LOCATION_TITLE     heading on the control page
 //   AP_SSID            Wi-Fi network name
 //   AP_PASSWORD_DEFAULT  Wi-Fi password, or put AP_PASSWORD in the file named by
-//                      SECRETS_FILE (kept out of git), at least 8 characters
+//                      include/secrets_kitchen.h when KITCHEN_SECRETS=1 (kept out of
+//                      git), at least 8 characters
 //   LED_PIN, NUM_LEDS  WS2812B data pin and LED count
 //   MAX_BRIGHTNESS     0-255, brightness of "on" (default 255)
 //   FADE_MS            fade time for on/off; 0 = instant
@@ -24,10 +25,10 @@
 #include <ESPAsyncWebServer.h>
 #include <DNSServer.h>
 
-#ifdef SECRETS_FILE
-#if __has_include(SECRETS_FILE)
-#include SECRETS_FILE
-#endif
+// The file name is written out (not taken from a macro) so PlatformIO sees
+// the dependency and rebuilds when the password changes.
+#if defined(KITCHEN_SECRETS) && __has_include("secrets_kitchen.h")
+#include "secrets_kitchen.h"
 #endif
 
 #ifndef LOCATION_TITLE
