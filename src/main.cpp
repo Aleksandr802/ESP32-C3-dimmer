@@ -41,6 +41,7 @@
 #define AP_PASSWORD AP_PASSWORD_DEFAULT
 #else
 #error "No Wi-Fi password: copy include/secrets_kitchen.h.example to include/secrets_kitchen.h and set AP_PASSWORD"
+#define AP_PASSWORD "unset-password"  // only to keep the compiler from adding more errors
 #endif
 #endif
 static_assert(sizeof(AP_PASSWORD) - 1 >= 8, "AP_PASSWORD needs at least 8 characters");
