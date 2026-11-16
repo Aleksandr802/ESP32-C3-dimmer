@@ -67,7 +67,7 @@ at the board.
 
 Open the serial monitor (`pio device monitor -b 115200`). At start-up it
 prints `sensor on GPIO3, now idle`. Each press prints `sensor: active`,
-`light ON (hand sensor)` / `light OFF (hand sensor)`, then `sensor: idle`.
+`light ON (button)` / `light OFF (button)`, then `sensor: idle`.
 
 | You see | Fix |
 |---|---|

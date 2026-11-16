@@ -18,6 +18,7 @@
 //   SENSOR_LATCHING    0 = sensor gives a pulse per wave (each pulse toggles)
 //                      1 = sensor flips its output on each wave (each change toggles)
 //   SENSOR_PULL        0 = none (default), 1 = pull-up, 2 = pull-down
+//   SENSOR_LABEL       name of the input in the serial log (default "sensor")
 //   SENSOR_LOCKOUT_MS  pulse inputs: presses closer together than this count once (default 800)
 //   DISABLE_BROWNOUT   1 = turn off the brown-out reset (bathroom board only)
 
@@ -72,6 +73,9 @@ static_assert(sizeof(AP_PASSWORD) - 1 >= 8, "AP_PASSWORD needs at least 8 charac
 #endif
 #ifndef SENSOR_LATCHING
 #define SENSOR_LATCHING 0
+#endif
+#ifndef SENSOR_LABEL
+#define SENSOR_LABEL "sensor"
 #endif
 #ifndef SENSOR_PULL
 #define SENSOR_PULL 0
@@ -167,7 +171,7 @@ void updateStrip(uint32_t now) {
 #endif
 }
 
-// ------------------------------------------------------------------ hand sensor
+// ------------------------------------------------------------------ button / sensor input
 
 #if SENSOR_PIN >= 0
 bool sensorStable = false;
@@ -220,7 +224,7 @@ void sensorPoll(uint32_t now) {
         return;
     }
     lastSensorToggleAt = now;
-    toggleLight("hand sensor");
+    toggleLight(SENSOR_LABEL);
 }
 #endif
 
@@ -292,7 +296,7 @@ String renderControlPage() {
     html += "<form method='POST' action='/api/light/on'><button class='on-btn' type='submit'>Turn ON</button></form>";
     html += "<form method='POST' action='/api/light/off'><button class='off-btn' type='submit'>Turn OFF</button></form>";
     html += "</div></main>";
-    // Keeps the status current when the hand sensor switches the light.
+    // Keeps the status current when the button switches the light.
     html += "<script>setInterval(function(){fetch('/api/light/state').then(function(r){return r.json();}).then(function(s){"
             "var e=document.getElementById('st');e.className='status '+(s.lightOn?'on':'off');"
             "e.textContent='Current state: '+(s.lightOn?'ON':'OFF');}).catch(function(){});},2000);</script>";

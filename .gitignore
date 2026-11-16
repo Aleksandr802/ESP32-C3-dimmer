@@ -6,3 +6,6 @@
 
 # Wi-Fi passwords per location (copy the .example file)
 include/secrets_*.h
+
+# macOS folder metadata
+.DS_Store
