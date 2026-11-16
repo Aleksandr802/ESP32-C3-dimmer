@@ -7,7 +7,7 @@ http://192.168.4.1). Pick the room when building:
 | Build (env) | Board | LEDs | Wi-Fi network | Extra |
 |---|---|---|---|---|
 | `esp-32u` | ESP32 dev board | 22 on GPIO12 | `BathLight` | — |
-| `kitchen_light` | ESP32-C3 SuperMini | 52 on GPIO4 | `KitchenLight` | push button on GPIO3, 0.6 s fade |
+| `kitchen_light` | ESP32-C3 SuperMini | 52 on GPIO4 | `KitchenLight` | push button on GPIO3, brightness, warm/cool white and colours, 0.6 s fade |
 
 ```bash
 pio run -e kitchen_light -t upload     # or choose the env in VS Code's PlatformIO toolbar
@@ -95,6 +95,20 @@ not work here.
   between the two supplies. Unplug the supply's 5 V from the board while
   flashing (or flash before wiring it).
 
+### Brightness, white and colour
+
+The kitchen page has a brightness slider, a **White** mode with a warm↔cool
+slider (2200–6500 K; 4000 K is the original warm white) and a **Colour** mode
+with a colour picker and seven preset colours. Changes crossfade in about
+0.2 s. The phone, the button and the page all share the same settings: "on"
+always comes back at the chosen brightness and colour.
+
+The settings are saved on the board 3 seconds after the last change, so they
+survive a power cut. This is on for the kitchen only (`-DCOLOR_CONTROL=1`).
+
+Power: full-brightness cool white (6500 K) is the most demanding setting,
+about 3.1 A for 52 LEDs, still within the 4 A supply.
+
 ### Other settings
 
 In `[env:kitchen_light]` of `platformio.ini`: `NUM_LEDS`, `LED_PIN`,
@@ -111,4 +125,11 @@ Avoid GPIO2, GPIO8 and GPIO9 on the SuperMini: they decide how the board starts.
 | `GET /api/light/state` | `{"ok":true,"lightOn":true,"brightness":255}` |
 | `POST /api/light/on`, `POST /api/light/off` | switch, then back to the page |
 | `POST /api/light/toggle` | switch over, returns the state |
-| `POST /api/light/brightness?level=0..255` | set brightness, returns the state |
+| `POST /api/light/brightness?level=0..255` | set brightness (0 = off), returns the state |
+| `POST /api/light/white?kelvin=2200..6500` | white at that warmth (kitchen) |
+| `POST /api/light/color?hex=ff8000` | that colour (kitchen) |
+
+With `COLOR_CONTROL` the state also has `level` (brightness used by "on"),
+`mode` (`white`/`color`), `kelvin` and `color` (`#rrggbb`). Parameters can be
+in the query string or a form body. `on`/`off` return the state as JSON when
+the request has `Accept: application/json`, otherwise they redirect to the page.
